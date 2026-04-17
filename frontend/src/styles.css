@@ -1,0 +1,586 @@
+/* ═══════════════════════════════════════════════════════════════════
+   IPL WIN PREDICTOR — NEOBRUTALISM DESIGN SYSTEM
+   ═══════════════════════════════════════════════════════════════════ */
+
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&family=Space+Mono:wght@700&display=swap");
+
+/* ── Reset & Base ─────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --black: #1a1a1a;
+  --white: #fefefe;
+  --yellow: #FFD600;
+  --red: #FF3B3B;
+  --blue: #3366FF;
+  --green: #00C853;
+  --pink: #FF6BB5;
+  --orange: #FF822A;
+  --purple: #A855F7;
+  --cream: #FFF8E1;
+  --bg: #F5F0E1;
+  --border: 4px solid var(--black);
+  --shadow: 6px 6px 0 var(--black);
+  --shadow-sm: 4px 4px 0 var(--black);
+  --shadow-lg: 8px 8px 0 var(--black);
+  --radius: 0px;
+  --font: "Space Grotesk", system-ui, sans-serif;
+  --font-mono: "Space Mono", monospace;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--black);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── App Shell ────────────────────────────────────────────────────── */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Decorative Shapes ────────────────────────────────────────────── */
+.deco {
+  position: fixed;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.deco-1 {
+  width: 200px;
+  height: 200px;
+  background: var(--yellow);
+  border: var(--border);
+  top: -40px;
+  left: -40px;
+  transform: rotate(15deg);
+}
+
+.deco-2 {
+  width: 140px;
+  height: 140px;
+  background: var(--pink);
+  border: var(--border);
+  bottom: 60px;
+  right: -30px;
+  transform: rotate(-20deg);
+}
+
+.deco-3 {
+  width: 100px;
+  height: 100px;
+  background: var(--blue);
+  border: var(--border);
+  top: 50%;
+  left: -20px;
+  transform: rotate(45deg);
+}
+
+/* ── Header ───────────────────────────────────────────────────────── */
+.header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  z-index: 1;
+  position: relative;
+}
+
+.header-badge {
+  display: inline-block;
+  font-size: 3rem;
+  background: var(--yellow);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  line-height: 1;
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.title {
+  font-family: var(--font-mono);
+  font-size: clamp(2rem, 6vw, 3.8rem);
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  color: var(--black);
+  text-transform: uppercase;
+}
+
+.subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 2px;
+  margin-top: 0.5rem;
+  color: var(--black);
+  opacity: 0.7;
+  text-transform: uppercase;
+}
+
+/* ── Main Container ───────────────────────────────────────────────── */
+.main-container {
+  width: 100%;
+  max-width: 780px;
+  z-index: 1;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* ── Form Card ────────────────────────────────────────────────────── */
+.form-card {
+  background: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* ── Innings Toggle ───────────────────────────────────────────────── */
+.innings-toggle {
+  display: flex;
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  background: var(--cream);
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.innings-btn {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.8rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  color: var(--black);
+  position: relative;
+}
+
+.innings-btn:first-child {
+  border-right: 3px solid var(--black);
+}
+
+.innings-active {
+  background: var(--yellow);
+  pointer-events: none;
+}
+
+.innings-hint {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--black);
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--cream);
+  padding: 0.5rem;
+  border: 2px solid var(--black);
+  text-align: center;
+}
+
+.form-heading {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--green); /* Changed from yellow to contrast with active tab */
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 0.6rem 1rem;
+  display: inline-block;
+  align-self: flex-start;
+}
+
+/* ── Teams Row ────────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.row .field {
+  flex: 1;
+}
+
+.vs-badge {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.4rem;
+  background: var(--red);
+  color: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 0.5rem 0.8rem;
+  margin-bottom: 2px;
+  text-align: center;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Fields ───────────────────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field.full-width {
+  width: 100%;
+}
+
+.field label {
+  font-weight: 800;
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.field select,
+.field input {
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  border: 3px solid var(--black);
+  border-radius: var(--radius);
+  background: var(--cream);
+  color: var(--black);
+  box-shadow: var(--shadow-sm);
+  outline: none;
+  transition: box-shadow 0.15s, transform 0.15s;
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.field select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%231a1a1a' stroke-width='3' stroke-linecap='square'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  padding-right: 2.5rem;
+}
+
+.field input:focus,
+.field select:focus {
+  box-shadow: 2px 2px 0 var(--black);
+  transform: translate(2px, 2px);
+  border-color: var(--blue);
+}
+
+.field input::placeholder {
+  color: #999;
+  font-weight: 400;
+}
+
+/* ── Stats Grid ───────────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.stats-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+/* ── Error Box ────────────────────────────────────────────────────── */
+.error-box {
+  background: var(--red);
+  color: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  animation: shake 0.4s ease;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* ── Buttons ──────────────────────────────────────────────────────── */
+.button-row {
+  display: flex;
+  gap: 1rem;
+}
+
+.btn {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  padding: 0.9rem 2rem;
+  border: var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: transform 0.1s, box-shadow 0.1s;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0 0 0 var(--black);
+}
+
+.btn-primary {
+  background: var(--yellow);
+  color: var(--black);
+  box-shadow: var(--shadow);
+  flex: 1;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #FFE033;
+  transform: translate(2px, 2px);
+  box-shadow: 4px 4px 0 var(--black);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: var(--white);
+  color: var(--black);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover {
+  background: #f0f0f0;
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--black);
+}
+
+/* ── Spinner ──────────────────────────────────────────────────────── */
+.spinner-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--black);
+  border-top-color: transparent;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Result Card ──────────────────────────────────────────────────── */
+.result-card {
+  background: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+  padding: 2rem;
+  animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.result-heading {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: var(--purple);
+  color: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  padding: 0.6rem 1rem;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Probability Section ──────────────────────────────────────────── */
+.prob-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.team-prob {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.team-dot {
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--black);
+  flex-shrink: 0;
+}
+
+.team-name {
+  font-weight: 700;
+  font-size: 1rem;
+  flex: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.team-pct {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+/* ── Progress Bar ─────────────────────────────────────────────────── */
+.bar-track {
+  display: flex;
+  width: 100%;
+  height: 40px;
+  border: var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  background: var(--cream);
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.8s cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+}
+
+.bar-fill-win {
+  border-right: 2px solid var(--black);
+}
+
+/* ── Big Prob Display ─────────────────────────────────────────────── */
+.big-prob {
+  margin-top: 1.5rem;
+  text-align: center;
+  background: var(--yellow);
+  border: var(--border);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+}
+
+.big-prob-label {
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.3rem;
+}
+
+.big-prob-number {
+  font-family: var(--font-mono);
+  font-size: clamp(3rem, 10vw, 5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -2px;
+}
+
+.big-prob-sub {
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-top: 0.3rem;
+  opacity: 0.7;
+}
+
+/* ── Footer ───────────────────────────────────────────────────────── */
+.footer {
+  margin-top: 3rem;
+  z-index: 1;
+  position: relative;
+}
+
+.footer p {
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.5;
+  text-align: center;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 700px) {
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vs-badge {
+    align-self: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  .button-row {
+    flex-direction: column;
+  }
+
+  .form-card,
+  .result-card {
+    padding: 1.25rem;
+  }
+
+  .deco { display: none; }
+}
+
+@media (max-width: 400px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
