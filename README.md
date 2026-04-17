@@ -13,7 +13,7 @@
 
 ## Overview
 
-IPL Win Predictor is a full-stack web application that estimates the win probability of a batting team at any point during an IPL match. Enter the current match situation — score, overs bowled, wickets fallen, and (for the second innings) the target — and the model instantly returns how likely the batting team is to win.
+Criclytics is a full-stack web application that estimates the win probability of a batting team at any point during an IPL match. Enter the current match situation — score, overs bowled, wickets fallen, and (for the second innings) the target — and the model instantly returns how likely the batting team is to win.
 
 It supports **both innings**:
 - **1st Innings** — predicts win likelihood based on projected total given current scoring rate and resources remaining
@@ -79,7 +79,7 @@ Trained on synthetically generated match situations using a domain-heuristic win
 ## Project Structure
 
 ```
-ipl-predictor/
+criclytics/
 ├── backend/
 │   ├── app.py                  # Flask API — /predict, /teams, /venues, /health
 │   ├── train_model.py          # Training script for both innings models

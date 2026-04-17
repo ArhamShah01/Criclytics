@@ -161,7 +161,7 @@ function App() {
 
       <header className="header">
         <div className="header-badge">🏏</div>
-        <h1 className="title">IPL WIN PREDICTOR</h1>
+        <h1 className="title">CRICLYTICS</h1>
         <p className="subtitle">PREDICT THE OUTCOME OF ANY MATCH SITUATION</p>
       </header>
 
@@ -374,7 +374,7 @@ function App() {
       </main>
 
       <footer className="footer">
-        <p>BUILT WITH FLASK + REACT + SCIKIT-LEARN &nbsp;|&nbsp; IPL WIN PREDICTOR 2026</p>
+        <p>BUILT WITH FLASK + REACT + SCIKIT-LEARN &nbsp;|&nbsp; CRICLYTICS 2026</p>
       </footer>
     </div>
   );

@@ -1,5 +1,5 @@
 """
-Flask backend for IPL Win Predictor.
+Flask backend for Criclytics.
 Supports both 1st innings (batting) and 2nd innings (chase) predictions.
 Loads pre-trained models and exposes a /predict endpoint.
 """
