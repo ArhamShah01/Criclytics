@@ -78,11 +78,19 @@ function App() {
       return "Enter valid score";
     if (form.overs === "" || isNaN(form.overs) || Number(form.overs) < 0 || Number(form.overs) > 20)
       return "Overs must be 0–20";
+    if (String(form.overs).includes('.')) {
+      const dec = String(form.overs).split('.')[1];
+      if (dec.length > 1 || Number(dec) > 5) {
+        return "Overs decimal must be between .0 and .5";
+      }
+    }
     if (form.wickets === "" || isNaN(form.wickets) || Number(form.wickets) < 0 || Number(form.wickets) > 10)
       return "Wickets must be 0–10";
     if (innings === 2) {
       if (form.target === "" || isNaN(form.target) || Number(form.target) < 1)
         return "Enter valid target";
+      if (Number(form.current_score) >= Number(form.target))
+        return "Score cannot be higher than or equal to target";
     }
     if (Number(form.overs) === 0 && Number(form.current_score) > 0)
       return "Score must be 0 at 0 overs";
