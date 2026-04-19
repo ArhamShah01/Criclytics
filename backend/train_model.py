@@ -22,7 +22,9 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import LogisticRegression
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import brier_score_loss, roc_auc_score
+from lightgbm import LGBMClassifier
 
 # ── IPL teams and venues ────────────────────────────────────────────
 TEAMS = [
@@ -90,6 +92,9 @@ def generate_innings2_data(n: int) -> pd.DataFrame:
         p_win += 0.001 * balls_left
         p_win = np.clip(p_win, 0.02, 0.98)
         result = int(np.random.random() < p_win)
+        overs_bowled = overs
+        phase = 'powerplay' if overs_bowled <= 6 else 'middle' if overs_bowled <= 15 else 'death'
+        run_rate_diff = crr - rrr
 
         rows.append({
             "batting_team": batting_team,
@@ -101,6 +106,8 @@ def generate_innings2_data(n: int) -> pd.DataFrame:
             "current_run_rate": round(crr, 2),
             "required_run_rate": round(rrr, 2),
             "result": result,
+            "phase": phase,
+            "run_rate_diff": round(run_rate_diff, 2),
         })
     return pd.DataFrame(rows)
 
@@ -134,13 +141,14 @@ def generate_innings1_data(n: int) -> pd.DataFrame:
         projected_total = current_score + (crr * (balls_left / 6) * resource_factor)
 
         # Average IPL total ~165. Higher projected = more likely to win.
-        avg_total = 165
+        avg_total = 183
         p_win = 0.5
         p_win += 0.008 * (projected_total - avg_total)
         p_win += 0.02 * (wickets_left - 5)
         p_win += 0.001 * current_score / max(overs, 0.1) * 0.5
         p_win = np.clip(p_win, 0.05, 0.95)
         result = int(np.random.random() < p_win)
+        phase = 'powerplay' if overs <= 6 else 'middle' if overs <= 15 else 'death'
 
         rows.append({
             "batting_team": batting_team,
@@ -151,6 +159,7 @@ def generate_innings1_data(n: int) -> pd.DataFrame:
             "wickets_left": wickets_left,
             "current_run_rate": round(crr, 2),
             "result": result,
+            "phase": phase,
         })
     return pd.DataFrame(rows)
 
@@ -164,7 +173,7 @@ def main():
     X2 = df2.drop(columns=["result"])
     y2 = df2["result"]
 
-    cat_features = ["batting_team", "bowling_team", "venue"]
+    cat_features = ["batting_team", "bowling_team", "venue", "phase"]
 
     encoder2 = ColumnTransformer(
         transformers=[
@@ -175,11 +184,17 @@ def main():
 
     pipeline2 = Pipeline([
         ("encoder", encoder2),
-        ("clf", LogisticRegression(max_iter=1000, C=1.0)),
+        ("clf", CalibratedClassifierCV(
+    LGBMClassifier(n_estimators=200, max_depth=4, random_state=42),
+    method='isotonic', cv=3
+)),
     ])
 
     pipeline2.fit(X2, y2)
-    print(f"  Training accuracy: {pipeline2.score(X2, y2):.4f}")
+    proba2 = pipeline2.predict_proba(X2)[:, 1]
+    print(f" Train AUC: {roc_auc_score(y2, proba2):.4f}")
+    print(f" Train Brier: {brier_score_loss(y2, proba2):.4f}")
+    #print(f"  Training accuracy: {pipeline2.score(X2, y2):.4f}")
 
     with open("model.pkl", "wb") as f:
         pickle.dump(pipeline2, f)
@@ -207,11 +222,17 @@ def main():
 
     pipeline1 = Pipeline([
         ("encoder", encoder1),
-        ("clf", LogisticRegression(max_iter=1000, C=1.0)),
+        ("clf", CalibratedClassifierCV(
+    LGBMClassifier(n_estimators=200, max_depth=4, random_state=42),
+    method='isotonic', cv=3
+)),
     ])
 
     pipeline1.fit(X1, y1)
-    print(f"  Training accuracy: {pipeline1.score(X1, y1):.4f}")
+    proba2 = pipeline2.predict_proba(X2)[:, 1]
+    print(f" Train AUC: {roc_auc_score(y2, proba2):.4f}")
+    print(f" Train Brier: {brier_score_loss(y2, proba2):.4f}")
+  #print(f"  Training accuracy: {pipeline1.score(X1, y1):.4f}")
 
     with open("model_innings1.pkl", "wb") as f:
         pickle.dump(pipeline1, f)
