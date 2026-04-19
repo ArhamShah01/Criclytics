@@ -1,18 +1,18 @@
 """
 Train IPL Win Probability models using synthetic match-state data.
 Produces:
-  - model.pkl          (2nd innings chase model)
-  - model_innings1.pkl (1st innings batting model)
-  - encoder.pkl        (shared reference encoder)
+    - model.pkl (2nd innings chase model)
+    - model_innings1.pkl (1st innings batting model)
+    - encoder.pkl (shared reference encoder)
 
 2nd innings features:
-  Categorical: batting_team, bowling_team, venue
-  Numerical:   runs_left, balls_left, wickets_left,
-               current_run_rate, required_run_rate
+  Categorical: batting_team, bowling_team, venue, phase
+  Numerical: runs_left, balls_left, wickets_left,
+               current_run_rate, required_run_rate, run_rate_diff
 
 1st innings features:
-  Categorical: batting_team, bowling_team, venue
-  Numerical:   current_score, balls_left, wickets_left,
+  Categorical: batting_team, bowling_team, venue, phase
+  Numerical: current_score, balls_left, wickets_left,
                current_run_rate
 """
 
@@ -22,7 +22,9 @@ import pandas as pd
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.linear_model import LogisticRegression
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.metrics import brier_score_loss, roc_auc_score
+from lightgbm import LGBMClassifier
 
 # ── IPL teams and venues ────────────────────────────────────────────
 TEAMS = [
@@ -52,8 +54,7 @@ VENUES = [
 ]
 
 np.random.seed(42)
-N = 20_000  # synthetic samples per innings type
-
+N = 20_000 # synthetic samples per innings type
 
 # ── 2nd Innings Data ────────────────────────────────────────────────
 def generate_innings2_data(n: int) -> pd.DataFrame:
@@ -61,7 +62,7 @@ def generate_innings2_data(n: int) -> pd.DataFrame:
     rows = []
     for _ in range(n):
         batting_team = np.random.choice(TEAMS)
-        bowling_team = np.random.choice([t for t in TEAMS if t != batting_team])
+        bowling_team = np.random.choice([t for t in TEAMS if t!= batting_team])
         venue = np.random.choice(VENUES)
 
         target = np.random.randint(120, 230)
@@ -81,6 +82,11 @@ def generate_innings2_data(n: int) -> pd.DataFrame:
         crr = current_score / overs if overs > 0 else 0.0
         rrr = (runs_left / (balls_left / 6)) if balls_left > 0 else 99.0
 
+        # New features
+        overs_bowled = overs
+        phase = 'powerplay' if overs_bowled <= 6 else 'middle' if overs_bowled <= 15 else 'death'
+        run_rate_diff = crr - rrr
+
         # Heuristic win probability
         p_win = 0.5
         if rrr > 0:
@@ -95,15 +101,16 @@ def generate_innings2_data(n: int) -> pd.DataFrame:
             "batting_team": batting_team,
             "bowling_team": bowling_team,
             "venue": venue,
+            "phase": phase,
             "runs_left": runs_left,
             "balls_left": balls_left,
             "wickets_left": wickets_left,
             "current_run_rate": round(crr, 2),
             "required_run_rate": round(rrr, 2),
+            "run_rate_diff": round(run_rate_diff, 2),
             "result": result,
         })
     return pd.DataFrame(rows)
-
 
 # ── 1st Innings Data ────────────────────────────────────────────────
 def generate_innings1_data(n: int) -> pd.DataFrame:
@@ -111,7 +118,7 @@ def generate_innings1_data(n: int) -> pd.DataFrame:
     rows = []
     for _ in range(n):
         batting_team = np.random.choice(TEAMS)
-        bowling_team = np.random.choice([t for t in TEAMS if t != batting_team])
+        bowling_team = np.random.choice([t for t in TEAMS if t!= batting_team])
         venue = np.random.choice(VENUES)
 
         overs = round(np.random.uniform(0.1, 19.5), 1)
@@ -129,12 +136,15 @@ def generate_innings1_data(n: int) -> pd.DataFrame:
 
         crr = current_score / overs if overs > 0 else 0.0
 
+        # New feature
+        phase = 'powerplay' if overs <= 6 else 'middle' if overs <= 15 else 'death'
+
         # Projected total based on CRR and remaining resources
         resource_factor = wickets_left / 10.0
         projected_total = current_score + (crr * (balls_left / 6) * resource_factor)
 
-        # Average IPL total ~165. Higher projected = more likely to win.
-        avg_total = 165
+        # Average IPL total updated for modern era ~183
+        avg_total = 183
         p_win = 0.5
         p_win += 0.008 * (projected_total - avg_total)
         p_win += 0.02 * (wickets_left - 5)
@@ -146,6 +156,7 @@ def generate_innings1_data(n: int) -> pd.DataFrame:
             "batting_team": batting_team,
             "bowling_team": bowling_team,
             "venue": venue,
+            "phase": phase,
             "current_score": current_score,
             "balls_left": balls_left,
             "wickets_left": wickets_left,
@@ -153,7 +164,6 @@ def generate_innings1_data(n: int) -> pd.DataFrame:
             "result": result,
         })
     return pd.DataFrame(rows)
-
 
 def main():
     # ── Train 2nd Innings Model ──────────────────────────────────────
@@ -164,7 +174,7 @@ def main():
     X2 = df2.drop(columns=["result"])
     y2 = df2["result"]
 
-    cat_features = ["batting_team", "bowling_team", "venue"]
+    cat_features = ["batting_team", "bowling_team", "venue", "phase"]
 
     encoder2 = ColumnTransformer(
         transformers=[
@@ -175,19 +185,24 @@ def main():
 
     pipeline2 = Pipeline([
         ("encoder", encoder2),
-        ("clf", LogisticRegression(max_iter=1000, C=1.0)),
+        ("clf", CalibratedClassifierCV(
+            LGBMClassifier(n_estimators=200, max_depth=4, random_state=42),
+            method='isotonic', cv=3
+        )),
     ])
 
     pipeline2.fit(X2, y2)
-    print(f"  Training accuracy: {pipeline2.score(X2, y2):.4f}")
+    proba2 = pipeline2.predict_proba(X2)[:, 1]
+    print(f" Train AUC: {roc_auc_score(y2, proba2):.4f}")
+    print(f" Train Brier: {brier_score_loss(y2, proba2):.4f}")
 
     with open("model.pkl", "wb") as f:
         pickle.dump(pipeline2, f)
-    print("  Saved model.pkl")
+    print(" Saved model.pkl")
 
     with open("encoder.pkl", "wb") as f:
         pickle.dump(encoder2, f)
-    print("  Saved encoder.pkl")
+    print(" Saved encoder.pkl")
 
     # ── Train 1st Innings Model ──────────────────────────────────────
     print()
@@ -207,24 +222,28 @@ def main():
 
     pipeline1 = Pipeline([
         ("encoder", encoder1),
-        ("clf", LogisticRegression(max_iter=1000, C=1.0)),
+        ("clf", CalibratedClassifierCV(
+            LGBMClassifier(n_estimators=200, max_depth=4, random_state=42),
+            method='isotonic', cv=3
+        )),
     ])
 
     pipeline1.fit(X1, y1)
-    print(f"  Training accuracy: {pipeline1.score(X1, y1):.4f}")
+    proba1 = pipeline1.predict_proba(X1)[:, 1]
+    print(f" Train AUC: {roc_auc_score(y1, proba1):.4f}")
+    print(f" Train Brier: {brier_score_loss(y1, proba1):.4f}")
 
     with open("model_innings1.pkl", "wb") as f:
         pickle.dump(pipeline1, f)
-    print("  Saved model_innings1.pkl")
+    print(" Saved model_innings1.pkl")
 
     # ── Sanity checks ────────────────────────────────────────────────
     print()
     print("Sanity checks:")
     prob2 = pipeline2.predict_proba(X2.iloc[:1])[0]
-    print(f"  2nd innings sample: lose={prob2[0]:.3f}  win={prob2[1]:.3f}")
+    print(f" 2nd innings sample: lose={prob2[0]:.3f} win={prob2[1]:.3f}")
     prob1 = pipeline1.predict_proba(X1.iloc[:1])[0]
-    print(f"  1st innings sample: lose={prob1[0]:.3f}  win={prob1[1]:.3f}")
-
+    print(f" 1st innings sample: lose={prob1[0]:.3f} win={prob1[1]:.3f}")
 
 if __name__ == "__main__":
     main()
